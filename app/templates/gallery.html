@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CloudPhoto</title><link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"></head>
+<body><main>
+<p class="eyebrow">CLOUDPHOTO / LOCAL DEVELOPMENT</p>
+<h1>A little gallery.<br>A bigger cloud journey.</h1>
+<p>Upload a photo and see it in your gallery.</p>
+<form action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data">
+<label for="photo">Choose a photo</label>
+<input id="photo" name="photo" type="file" accept="image/jpeg,image/png" required>
+<small>JPEG or PNG · under 5 MB · up to 16 megapixels</small>
+<button type="submit">Upload photo</button>
+</form>
+<h2>Your gallery <span>({{ photos|length }})</span></h2>
+<section class="gallery" aria-label="Photo gallery">
+{% for photo in photos %}<figure><img src="{{ url_for('image', filename=photo['id']) }}" alt="{{ photo['name'] }}" loading="lazy"><figcaption>{{ photo['name'] }}</figcaption></figure>
+{% else %}<p class="empty">Your gallery is ready for its first photo.</p>{% endfor %}
+</section><footer>Learning build · Photos and metadata are stored on this computer.</footer>
+</main></body></html>
