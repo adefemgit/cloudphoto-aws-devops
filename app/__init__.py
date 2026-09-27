@@ -2,6 +2,7 @@
 import os
 import sqlite3
 import warnings
+from contextlib import closing
 from pathlib import Path
 from uuid import uuid4
 
@@ -22,7 +23,7 @@ def create_app(test_config=None):
     photos = data / "photos"
     photos.mkdir(parents=True, exist_ok=True)
     database = data / "metadata.sqlite3"
-    with sqlite3.connect(database) as conn:
+    with closing(sqlite3.connect(database)) as conn, conn:
         conn.execute("CREATE TABLE IF NOT EXISTS photos (id TEXT PRIMARY KEY, name TEXT NOT NULL, created_at TEXT DEFAULT CURRENT_TIMESTAMP)")
 
     @app.get("/health")
@@ -32,7 +33,7 @@ def create_app(test_config=None):
 
     @app.get("/")
     def gallery():
-        with sqlite3.connect(database) as conn:
+        with closing(sqlite3.connect(database)) as conn, conn:
             conn.row_factory = sqlite3.Row
             rows = conn.execute("SELECT * FROM photos ORDER BY created_at DESC, rowid DESC").fetchall()
         return render_template("gallery.html", photos=rows)
@@ -59,7 +60,7 @@ def create_app(test_config=None):
         target = photos / filename
         try:
             normalized.save(target, "JPEG", quality=85)
-            with sqlite3.connect(database) as conn:
+            with closing(sqlite3.connect(database)) as conn, conn:
                 conn.execute("INSERT INTO photos (id, name) VALUES (?, ?)",
                              (filename, secure_filename(photo.filename)[:180] or "Photo"))
         except Exception:

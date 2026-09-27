@@ -1,5 +1,7 @@
 import io
 import tempfile
+import sqlite3
+from unittest.mock import patch
 import unittest
 from pathlib import Path
 from PIL import Image
@@ -21,6 +23,24 @@ class CloudPhotoTests(unittest.TestCase):
         Image.new("RGB", (10, 10), "blue").save(data, format="PNG")
         data.seek(0)
         return self.client.post("/upload", data={"photo": (data, name)})
+
+    def test_database_connections_are_closed(self):
+        connections = []
+        original_connect = sqlite3.connect
+
+        def track_connect(*args, **kwargs):
+            connection = original_connect(*args, **kwargs)
+            connections.append(connection)
+            return connection
+
+        with patch("app.sqlite3.connect", side_effect=track_connect):
+            self.client = create_app(self.config).test_client()
+            self.assertEqual(self.client.get("/").status_code, 200)
+            self.assertEqual(self.upload().status_code, 303)
+        self.assertEqual(len(connections), 3)
+        for connection in connections:
+            with self.assertRaises(sqlite3.ProgrammingError):
+                connection.execute("SELECT 1")
 
     def test_health_and_empty_gallery(self):
         self.assertEqual(self.client.get("/health").json, {"status": "ok"})
