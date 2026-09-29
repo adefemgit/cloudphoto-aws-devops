@@ -132,3 +132,50 @@ control.
 
 - [Flask file upload documentation](https://flask.palletsprojects.com/en/stable/patterns/fileuploads/)
 - [Flask development server documentation](https://flask.palletsprojects.com/en/stable/server/)
+
+
+
+### Build the image
+
+```sh
+docker build -t cloudphoto:local .
+```
+
+### Run the application
+
+```sh
+docker run -d --name cloudphot \
+  -p 127.0.0.1:5001:8000 \
+  -v cloudphoto-data:/app/data \
+  cloudphoto:local
+```
+
+Open http://localhost:5001.
+
+The `cloudphoto-data` volume stores uploaded photos and SQLite metadata.
+It preserves data when the container is removed and recreated using the same volume.
+
+### Verify
+
+```sh
+curl -i http://localhost:5001/health
+docker run --rm cloudphoto:local python -m unittest discover -v
+```
+
+### View logs and stop the application
+
+```sh
+docker logs cloudphot
+docker stop cloudphot
+```
+
+To start the existing container again:
+
+```sh
+docker start cloudphot
+```
+## Docker verification results  
+- Image builds successfully.
+- Gunicorn serves the application.
+- All seven tests pass inside Docker.
+- Uploaded data survives container replacement.
